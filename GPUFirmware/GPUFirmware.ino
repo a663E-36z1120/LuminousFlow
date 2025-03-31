@@ -83,9 +83,14 @@ CharliePlexPins getPinsForPixel(const Pixel &pixel) {
 void setBitBangOutput(const int pins[4], int value) {
   for (int i = 0; i < 4; i++) {
     if (value & (1 << i)) {
+//      delay(1);
       digitalWrite(pins[i], HIGH);
+      delay(1);
+//      digitalWrite(pins[i], HIGH);
     } else {
+//      delay(1);
       digitalWrite(pins[i], LOW);
+      delay(1);
     }
   }
 }
@@ -111,7 +116,7 @@ void outputLeftPixel(const Pixel &pixel) {
   CharliePlexPins cp = getPinsForPixel(pixel);
   setBitBangOutput(leftPosPins, cp.pos);
   setBitBangOutput(leftNegPins, cp.neg);
-  delay(1);
+//  delay(1);
 }
 
 // Outputs a pixel on the right half.
@@ -120,7 +125,7 @@ void outputRightPixel(const Pixel &pixel) {
   analogWrite(11, pixel.a);
   setBitBangOutput(rightPosPins, cp.pos);
   setBitBangOutput(rightNegPins, cp.neg);
-  delay(1);
+//  delay(1);
 }
 
 //----------------------------------------------------------
@@ -156,6 +161,19 @@ void refreshFrame(Pixel frameArray[][ROWS][COLS]) {
 void setup() {
   // Initialize the PWM brightness pin.
   pinMode(11, OUTPUT);
+  // Reset registers for Timer2
+  TCCR2A = 0;
+  TCCR2B = 0;
+
+  // Set Fast PWM mode (mode 3)
+  TCCR2A |= (1 << WGM20);
+
+  // Set prescaler (example: prescaler = 8, frequency ~7.8kHz)
+  TCCR2B |= (0 << CS22) | (0 << CS21) | (1 << CS20);
+
+
+  // Enable PWM output on Pin 11 (OC2A)
+  TCCR2A |= (1 << COM2A1);
 //  digitalWrite(11, HIGH);
   
   // Initialize all bit-bang pins (digital pins 0-13 and analog pins A0-A2).
@@ -172,44 +190,44 @@ void setup() {
       for (int x = 0; x < COLS; x++) {
         frame[half][y][x].x = x;
         frame[half][y][x].y = y;
-        frame[half][y][x].a = 255;  // Full brightness
+        frame[half][y][x].a = 255;  // brightness
       }
     }
   }
 //  int y = 0; int x = 0;
 //  frame[1][y][x].x = 0;
 //  frame[1][y][x].y = 0;
-//  frame[1][y][x].a = 255;
+//  frame[1][y][x].a = 20;
 }
 
 
 
 void loop() {
   // Refresh the display continuously.
-//  refreshFrame(frame);
-analogWrite(11, 64);
-// LEFT POS
-digitalWrite(0, HIGH);
-digitalWrite(1, LOW);
-digitalWrite(2, LOW);
-digitalWrite(3, LOW);
+    refreshFrame(frame);
+//  analogWrite(11, 255);
+//  // LEFT POS
+//  digitalWrite(0, LOW);
+//  digitalWrite(1, LOW);
+//  digitalWrite(2, LOW);
+//  digitalWrite(3, LOW);
+//
+//  // LEFT NEG
+//  digitalWrite(4, HIGH);
+//  digitalWrite(5, LOW);
+//  digitalWrite(6, LOW);
+//  digitalWrite(7, LOW);
 
-// LEFT NEG
-digitalWrite(4, LOW);
-digitalWrite(5, LOW);
-digitalWrite(6, LOW);
-digitalWrite(7, LOW);
-
-// RIGHT POS
-digitalWrite(8, LOW);
-digitalWrite(9, LOW);
-digitalWrite(10, LOW);
-digitalWrite(12, HIGH);
-
-// RIGHT NEG
-digitalWrite(13, LOW);
-digitalWrite(A0, LOW);
-digitalWrite(A1, LOW);
-digitalWrite(A2, HIGH);
+  // RIGHT POS
+//  digitalWrite(8, LOW);
+//  digitalWrite(9, LOW);
+//  digitalWrite(10, LOW);
+//  digitalWrite(12, LOW);
+//
+//  // RIGHT NEG
+//  digitalWrite(13, LOW);
+//  digitalWrite(A0, LOW);
+//  digitalWrite(A1, LOW);
+//  digitalWrite(A2, LOW);
 
 }
