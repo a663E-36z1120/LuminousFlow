@@ -274,7 +274,7 @@ int main() {
 
     // 4) Main loop
     while (true) {
-        // auto loopStart = std::chrono::steady_clock::now();
+        auto loopStart = std::chrono::steady_clock::now();
 
         // a) Update simulation with dynamic gravity
         double dynamicAngle = G_ANG + frameCounter * 0.05;
@@ -294,16 +294,16 @@ int main() {
         // e) Optional delay to control update speed
         // std::this_thread::sleep_for(std::chrono::milliseconds(30));
         
-        // f) Pseudo FPS logging
-        // auto now = std::chrono::steady_clock::now();
-        // auto elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastTime).count();
-        // if (elapsedMs >= 1000) {
-        //     fps = frameCount / (elapsedMs / 1000.0);
-        //     frameCount = 0;
-        //     lastTime = now;
-        // }
+        f) Pseudo FPS logging
+        auto now = std::chrono::steady_clock::now();
+        auto elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastTime).count();
+        if (elapsedMs >= 1000) {
+            fps = frameCount / (elapsedMs / 1000.0);
+            frameCount = 0;
+            lastTime = now;
+        }
 
-        // std::cout << "\rFPS: " << fps << "   " << std::flush;
+        std::cout << "\rFPS: " << fps << "   " << std::flush;
     }
 
     // (We never get here unless forcibly exited)
