@@ -174,7 +174,7 @@ void setup() {
 
   // Enable PWM output on Pin 11 (OC2A)
   TCCR2A |= (1 << COM2A1);
-//  digitalWrite(11, HIGH);
+  digitalWrite(11, HIGH);
   
   // Initialize all bit-bang pins (digital pins 0-13 and analog pins A0-A2).
   for (int pin = 0; pin < 14; pin++) {

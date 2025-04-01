@@ -21,17 +21,18 @@ static const int VAR_INTENSITY = 2;
 static const int HALF_COLS = 8;
 
 // Simulation domain parameters (matching the SPH engine's coordinate system)
-static const double SIM_W = 0.8;   // half-width
-static const double SIM_H = 0.9;   // total height
+// static const double SIM_W = 0.8;   // half-width
+// static const double SIM_H = 0.9;   // total height
 
 // Grid cell size for the hash grid approach
 static const double CELL_SIZE = 0.1;
+static const int N = 300;
 
 
 // -----------------------------------------------------------------------------
 // Include Physics Engine
 // -----------------------------------------------------------------------------
-#include SPHEngine.cpp
+#include "SPHEngine.cpp"
 
 
 // -----------------------------------------------------------------------------
@@ -177,40 +178,40 @@ void hashGrid(const std::vector<double>& positions,
 //   row = int( ( y / SIM_H ) * 9 )
 //   brightness = 255 if a particle is in that cell (or some blending).
 // -----------------------------------------------------------------------------
-// void mapParticlesToLEDs(const std::vector<double>& positions,
-//                         unsigned char ledFrame[LED_ROWS][LED_COLS])
-// {
-//     // First, clear the frame
-//     for (int r = 0; r < LED_ROWS; r++) {
-//         for (int c = 0; c < LED_COLS; c++) {
-//             ledFrame[r][c] = 0; // 0 brightness
-//         }
-//     }
+void mapParticlesToLEDs(const std::vector<double>& positions,
+                        unsigned char ledFrame[LED_ROWS][LED_COLS])
+{
+    // First, clear the frame
+    for (int r = 0; r < LED_ROWS; r++) {
+        for (int c = 0; c < LED_COLS; c++) {
+            ledFrame[r][c] = 0; // 0 brightness
+        }
+    }
 
-//     // positions is [x0, y0, x1, y1, ...] in SPH coords
-//     int numParticles = positions.size() / 2;
+    // positions is [x0, y0, x1, y1, ...] in SPH coords
+    int numParticles = positions.size() / 2;
 
-//     for (int i = 0; i < numParticles; i++) {
-//         double x = positions[2*i + 0];
-//         double y = positions[2*i + 1];
+    for (int i = 0; i < numParticles; i++) {
+        double x = positions[2*i + 0];
+        double y = positions[2*i + 1];
 
-//         // Convert x,y to LED matrix indices
-//         // Make sure to clamp indices so we don't go out of bounds.
-//         double normX = (x - (-SIM_W)) / ( (SIM_W) - (-SIM_W) ); // in [0..1]
-//         double normY = (y - BOTTOM )  / ( TOP - BOTTOM );       // in [0..1]
-//         if (normX < 0) normX = 0; if (normX > 1) normX = 1;
-//         if (normY < 0) normY = 0; if (normY > 1) normY = 1;
+        // Convert x,y to LED matrix indices
+        // Make sure to clamp indices so we don't go out of bounds.
+        double normX = (x - (-SIM_W)) / ( (SIM_W) - (-SIM_W) ); // in [0..1]
+        double normY = (y - BOTTOM )  / ( TOP - BOTTOM );       // in [0..1]
+        if (normX < 0) normX = 0; if (normX > 1) normX = 1;
+        if (normY < 0) normY = 0; if (normY > 1) normY = 1;
 
-//         int c = (int)std::floor(normX * (LED_COLS));  // 0..16
-//         int r = (int)std::floor(normY * (LED_ROWS));  // 0..9
+        int c = (int)std::floor(normX * (LED_COLS));  // 0..16
+        int r = (int)std::floor(normY * (LED_ROWS));  // 0..9
 
-//         if (c >= LED_COLS) c = LED_COLS - 1;
-//         if (r >= LED_ROWS) r = LED_ROWS - 1;
+        if (c >= LED_COLS) c = LED_COLS - 1;
+        if (r >= LED_ROWS) r = LED_ROWS - 1;
 
-//         // For simplicity, set brightness to 255 wherever there's a particle
-//         ledFrame[r][c] = 255;
-//     }
-// }
+        // For simplicity, set brightness to 255 wherever there's a particle
+        ledFrame[r][c] = 255;
+    }
+}
 
 
 // -----------------------------------------------------------------------------
@@ -219,27 +220,28 @@ void hashGrid(const std::vector<double>& positions,
 // Format: "H,half,row,col,brightness\n"
 // -----------------------------------------------------------------------------
 void sendFrameToArduino(HANDLE hSerial, 
-                        const unsigned char ledFrame[LED_ROWS][LED_COLS])
+    const unsigned char ledFrame[LED_ROWS][LED_COLS])
 {
-    DWORD bytesWritten;
-    // For each row, for each column, decide half=0 if col<8, otherwise half=1
-    for (int r = 0; r < LED_ROWS; r++) {
-        for (int c = 0; c < LED_COLS; c++) {
-            int half = (c < HALF_COLS) ? 0 : 1;
-            int colInHalf = (half == 0) ? c : (c - HALF_COLS);
-            int brightness = ledFrame[r][c];
-            
-            // Build the line: "H,half,r,colInHalf,brightness\n"
-            std::string line = "H," +
-                               std::to_string(half) + "," +
-                               std::to_string(r) + "," +
-                               std::to_string(colInHalf) + "," +
-                               std::to_string(brightness) + "\n";
+        // 1) Prepare a buffer with 1-byte header + 144 brightness bytes
+        static const BYTE HEADER = 0xFF;
+        static const int TOTAL_BYTES = 1 + (LED_ROWS * LED_COLS);
 
-            // Write to the serial port
-            WriteFile(hSerial, line.c_str(), DWORD(line.size()), &bytesWritten, NULL);
+        unsigned char framePacket[TOTAL_BYTES];
+
+        // 2) Put the header first
+        framePacket[0] = HEADER;
+
+        // 3) Copy the 9×16 LED data in row-major order
+        int index = 1;
+        for (int r = 0; r < LED_ROWS; r++) {
+        for (int c = 0; c < LED_COLS; c++) {
+        framePacket[index++] = ledFrame[r][c];
         }
-    }
+        }
+
+        // 4) Send all 145 bytes in a single WriteFile call
+        DWORD bytesWritten = 0;
+        WriteFile(hSerial, framePacket, TOTAL_BYTES, &bytesWritten, NULL);
 }
 
 
@@ -248,7 +250,7 @@ void sendFrameToArduino(HANDLE hSerial,
 // -----------------------------------------------------------------------------
 int main() {
     // 1) Open COM port (adjust to your Arduino port, e.g., "COM3")
-    const char* portName = "COM3";
+    const char* portName = "COM6";
     HANDLE hSerial = openSerialPort(portName, CBR_115200);
     if (hSerial == INVALID_HANDLE_VALUE) {
         return 1;
@@ -266,19 +268,18 @@ int main() {
 
 
     int frameCounter = 0;
+    int frameCount = 0;
     auto lastTime = std::chrono::steady_clock::now();
     double fps = 0.0;
 
     // 4) Main loop
     while (true) {
-        auto loopStart = std::chrono::steady_clock::now();
+        // auto loopStart = std::chrono::steady_clock::now();
 
         // a) Update simulation with dynamic gravity
-        double dynamicAngle = G_ANG + frameCounter * M_PI / 100.0;
-        frameCounter++;
+        double dynamicAngle = G_ANG + frameCounter * 0.05;
 
         sim.update(G_MAG, dynamicAngle);
-
         // b) Get the visual positions
         std::vector<double> positions = sim.get_visual_positions();
 
@@ -288,19 +289,21 @@ int main() {
         // d) Send the frame to the Arduino
         sendFrameToArduino(hSerial, ledFrame);
 
+        frameCounter++;
+
         // e) Optional delay to control update speed
         // std::this_thread::sleep_for(std::chrono::milliseconds(30));
         
         // f) Pseudo FPS logging
-        auto now = std::chrono::steady_clock::now();
-        auto elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastTime).count();
-        if (elapsedMs >= 1000) {
-            fps = frameCount / (elapsedMs / 1000.0);
-            frameCount = 0;
-            lastTime = now;
-        }
+        // auto now = std::chrono::steady_clock::now();
+        // auto elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastTime).count();
+        // if (elapsedMs >= 1000) {
+        //     fps = frameCount / (elapsedMs / 1000.0);
+        //     frameCount = 0;
+        //     lastTime = now;
+        // }
 
-        std::cout << "\rFPS: " << fps << "   " << std::flush;
+        // std::cout << "\rFPS: " << fps << "   " << std::flush;
     }
 
     // (We never get here unless forcibly exited)

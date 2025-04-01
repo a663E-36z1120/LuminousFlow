@@ -1,10 +1,10 @@
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
+// #include <pybind11/pybind11.h>
+// #include <pybind11/stl.h>
 #include <cmath>
 #include <vector>
 #include <random>
 
-namespace py = pybind11;
+// namespace py = pybind11;
 
 // --- Global simulation and physics parameters ---
 const double SIM_W = 0.8;   // Half-width for x (x in [-SIM_W, SIM_W])
@@ -223,22 +223,22 @@ public:
     }
 };
 
-// --- Pybind11 module definition ---
-PYBIND11_MODULE(fluidSim, m) {
-    m.doc() = "2D SPH fluid simulation module";
+// // --- Pybind11 module definition ---
+// PYBIND11_MODULE(fluidSim, m) {
+//     m.doc() = "2D SPH fluid simulation module";
 
-    py::class_<Simulation>(m, "Simulation")
-        .def(py::init<int, double, double, double, double>(),
-             py::arg("count"), py::arg("xmin"), py::arg("xmax"),
-             py::arg("ymin"), py::arg("ymax"))
-        .def("update", &Simulation::update, py::arg("g_mag") = G_MAG, py::arg("g_ang") = G_ANG)
-        .def("get_visual_positions", &Simulation::get_visual_positions);
+//     py::class_<Simulation>(m, "Simulation")
+//         .def(py::init<int, double, double, double, double>(),
+//              py::arg("count"), py::arg("xmin"), py::arg("xmax"),
+//              py::arg("ymin"), py::arg("ymax"))
+//         .def("update", &Simulation::update, py::arg("g_mag") = G_MAG, py::arg("g_ang") = G_ANG)
+//         .def("get_visual_positions", &Simulation::get_visual_positions);
 
-    // Optionally, expose some of the constants:
-    m.attr("SIM_W") = SIM_W;
-    m.attr("SIM_H") = SIM_H;
-    m.attr("BOTTOM") = BOTTOM;
-    m.attr("TOP") = TOP;
-    m.attr("G_MAG") = G_MAG;
-    m.attr("G_ANG") = G_ANG;
-}
+//     // Optionally, expose some of the constants:
+//     m.attr("SIM_W") = SIM_W;
+//     m.attr("SIM_H") = SIM_H;
+//     m.attr("BOTTOM") = BOTTOM;
+//     m.attr("TOP") = TOP;
+//     m.attr("G_MAG") = G_MAG;
+//     m.attr("G_ANG") = G_ANG;
+// }
