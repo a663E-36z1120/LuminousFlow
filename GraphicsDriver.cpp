@@ -256,7 +256,7 @@ int main() {
 
     // 2) Create SPH simulation
     //    Let's say 200 particles, in a sub-region of [-0.5..0.5] x [0..0.5]
-    Simulation sim(200, -0.5, 0.5, 0.0, 0.5);
+    Simulation sim(N, -SIM_W, SIM_W, BOTTOM, TOP);
 
     // 3) We'll store a 9×16 brightness frame in a 2D array
     static unsigned char ledFrame[LED_ROWS][LED_COLS];
@@ -264,10 +264,20 @@ int main() {
     std::cout << "Starting simulation + sending frames to Arduino...\n"
               << "Press Ctrl+C or close window to terminate.\n";
 
+
+    int frameCounter = 0;
+    auto lastTime = std::chrono::steady_clock::now();
+    double fps = 0.0;
+
     // 4) Main loop
     while (true) {
-        // a) Update simulation
-        sim.update(); // calls update_state, density, pressure, etc.
+        auto loopStart = std::chrono::steady_clock::now();
+
+        // a) Update simulation with dynamic gravity
+        double dynamicAngle = G_ANG + frameCounter * M_PI / 100.0;
+        frameCounter++;
+
+        sim.update(G_MAG, dynamicAngle);
 
         // b) Get the visual positions
         std::vector<double> positions = sim.get_visual_positions();
@@ -280,6 +290,17 @@ int main() {
 
         // e) Optional delay to control update speed
         // std::this_thread::sleep_for(std::chrono::milliseconds(30));
+        
+        // f) Pseudo FPS logging
+        auto now = std::chrono::steady_clock::now();
+        auto elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastTime).count();
+        if (elapsedMs >= 1000) {
+            fps = frameCount / (elapsedMs / 1000.0);
+            frameCount = 0;
+            lastTime = now;
+        }
+
+        std::cout << "\rFPS: " << fps << "   " << std::flush;
     }
 
     // (We never get here unless forcibly exited)
