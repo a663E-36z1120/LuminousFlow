@@ -83,14 +83,9 @@ CharliePlexPins getPinsForPixel(const Pixel &pixel) {
 void setBitBangOutput(const int pins[4], int value) {
   for (int i = 0; i < 4; i++) {
     if (value & (1 << i)) {
-//      delay(1);
       digitalWrite(pins[i], HIGH);
-      delay(1);
-//      digitalWrite(pins[i], HIGH);
     } else {
-//      delay(1);
       digitalWrite(pins[i], LOW);
-      delay(1);
     }
   }
 }
@@ -128,6 +123,7 @@ void outputRightPixel(const Pixel &pixel) {
 //  delay(1);
 }
 
+
 //----------------------------------------------------------
 // Global Frame Array
 //----------------------------------------------------------
@@ -156,25 +152,86 @@ void refreshFrame(Pixel frameArray[][ROWS][COLS]) {
 }
 
 //----------------------------------------------------------
+// Comms Protocol Parsing
+//----------------------------------------------------------
+
+/**
+ * Parses incoming serial lines of the form:
+ *   H,half,y,x,brightness
+ * Example:
+ *   H,0,3,5,128
+ * 
+ * Where:
+ *   - half is 0 or 1
+ *   - y is in [0..8]
+ *   - x is in [0..7]
+ *   - brightness is in [0..255]
+ */
+void parseSerial() {
+  // If there's no data available, just return
+  if (Serial.available() == 0) {
+    return;
+  }
+
+  // Read a line up to newline
+  String line = Serial.readStringUntil('\n');
+  line.trim(); // remove any trailing \r or spaces
+
+  // Quick check: does it start with "H,"?
+  if (!line.startsWith("H,")) {
+    // Not matching our protocol, ignore
+    return;
+  }
+
+  // Remove "H," prefix
+  line.remove(0, 2); // remove first 2 characters "H,"
+
+  // Now we expect: half,y,x,brightness
+  // We'll parse using indexOf and substring.
+  int comma1 = line.indexOf(','); // half
+  if (comma1 == -1) return;       // malformed
+  int half = line.substring(0, comma1).toInt();
+  line.remove(0, comma1 + 1);
+
+  int comma2 = line.indexOf(','); // y
+  if (comma2 == -1) return;
+  int y = line.substring(0, comma2).toInt();
+  line.remove(0, comma2 + 1);
+
+  int comma3 = line.indexOf(','); // x
+  if (comma3 == -1) return;
+  int x = line.substring(0, comma3).toInt();
+  line.remove(0, comma3 + 1);
+
+  // The remainder is brightness
+  int brightness = line.toInt();
+
+  // Validate ranges
+  if (half < 0 || half >= HALVES) return;
+  if (y < 0 || y >= ROWS) return;
+  if (x < 0 || x >= COLS) return;
+  if (brightness < 0) brightness = 0;
+  if (brightness > 255) brightness = 255;
+
+  // Update the frame
+  frame[half][y][x].a = brightness;
+}
+
+
+//----------------------------------------------------------
 // Arduino Setup and Loop
 //----------------------------------------------------------
 void setup() {
   // Initialize the PWM brightness pin.
   pinMode(11, OUTPUT);
-  // Reset registers for Timer2
   TCCR2A = 0;
   TCCR2B = 0;
-
-  // Set Fast PWM mode (mode 3)
   TCCR2A |= (1 << WGM20);
-
-  // Set prescaler (example: prescaler = 8, frequency ~7.8kHz)
   TCCR2B |= (0 << CS22) | (0 << CS21) | (1 << CS20);
 
 
   // Enable PWM output on Pin 11 (OC2A)
   TCCR2A |= (1 << COM2A1);
-//  digitalWrite(11, HIGH);
   
   // Initialize all bit-bang pins (digital pins 0-13 and analog pins A0-A2).
   for (int pin = 0; pin < 14; pin++) {
@@ -184,7 +241,8 @@ void setup() {
   pinMode(A1, OUTPUT);
   pinMode(A2, OUTPUT);
   
-  // Initialize the frame: set each Pixel's coordinates and a brightness of 255.
+
+// Initialize a full frame by setting each Pixel's coordinates and a brightness of 255.
   for (int half = 0; half < HALVES; half++) {
     for (int y = 0; y < ROWS; y++) {
       for (int x = 0; x < COLS; x++) {
@@ -194,40 +252,12 @@ void setup() {
       }
     }
   }
-//  int y = 0; int x = 0;
-//  frame[1][y][x].x = 0;
-//  frame[1][y][x].y = 0;
-//  frame[1][y][x].a = 20;
+
+  Serial.begin(115200); // maxxing out the baud rate because why not lol
 }
 
 
-
 void loop() {
-  // Refresh the display continuously.
+    parseSerial();
     refreshFrame(frame);
-//  analogWrite(11, 255);
-//  // LEFT POS
-//  digitalWrite(0, LOW);
-//  digitalWrite(1, LOW);
-//  digitalWrite(2, LOW);
-//  digitalWrite(3, LOW);
-//
-//  // LEFT NEG
-//  digitalWrite(4, HIGH);
-//  digitalWrite(5, LOW);
-//  digitalWrite(6, LOW);
-//  digitalWrite(7, LOW);
-
-  // RIGHT POS
-//  digitalWrite(8, LOW);
-//  digitalWrite(9, LOW);
-//  digitalWrite(10, LOW);
-//  digitalWrite(12, LOW);
-//
-//  // RIGHT NEG
-//  digitalWrite(13, LOW);
-//  digitalWrite(A0, LOW);
-//  digitalWrite(A1, LOW);
-//  digitalWrite(A2, LOW);
-
 }
