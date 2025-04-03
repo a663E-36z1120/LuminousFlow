@@ -12,11 +12,11 @@
 
 static const int LED_ROWS = 9;
 static const int LED_COLS = 16;
-static const int VAR_INTENSITY = 2; 
+static const int VAR_INTENSITY = 3; 
 static const int HALF_COLS = 8;
 
 static const double CELL_SIZE = 0.1;
-static const int N = 300;
+static const int N = 250;
 
 // For reading accelerometer data:
 static const BYTE ACCEL_HEADER = 0xFE; 
@@ -87,53 +87,46 @@ HANDLE openSerialPort(const char* portName, DWORD baudRate = CBR_115200) {
 // Returns true if we got a full packet. On success, outputs angle & magnitude.
 // -----------------------------------------------------------------------------
 bool readTiltData(HANDLE hSerial, float &angleDeg, float &magnitude) {
-    // How many bytes are available?
     COMSTAT stat;
     DWORD errors;
     ClearCommError(hSerial, &errors, &stat);
 
-    if (stat.cbInQue < ACCEL_PACKET_SIZE) {
-        // Not enough data yet
-        return false;
+    DWORD bytesAvailable = stat.cbInQue;
+    if (bytesAvailable < ACCEL_PACKET_SIZE) {
+        return false; // Not enough data
     }
 
+    // Read all available bytes (up to a safe max)
+    const DWORD MAX_READ = 1024;
+    uint8_t buffer[MAX_READ];
+    DWORD bytesToRead = (bytesAvailable > MAX_READ) ? MAX_READ : bytesAvailable;
     DWORD bytesRead = 0;
-    uint8_t buffer[ACCEL_PACKET_SIZE];
-    if (!ReadFile(hSerial, buffer, ACCEL_PACKET_SIZE, &bytesRead, NULL)) {
-        // ReadFile error
+
+    if (!ReadFile(hSerial, buffer, bytesToRead, &bytesRead, NULL) || bytesRead == 0) {
         return false;
     }
 
-    if (bytesRead < ACCEL_PACKET_SIZE) {
-        // Not a complete packet
-        return false;
+    // Search for the last valid packet (from end to start)
+    for (int i = bytesRead - ACCEL_PACKET_SIZE; i >= 0; --i) {
+        if (buffer[i] == ACCEL_HEADER) {
+            // Found a possible packet
+            union FloatBytes {
+                float f;
+                uint8_t b[4];
+            } angleData, magData;
+
+            for (int j = 0; j < 4; ++j)
+                angleData.b[j] = buffer[i + 1 + j];
+            for (int j = 0; j < 4; ++j)
+                magData.b[j] = buffer[i + 5 + j];
+
+            angleDeg = angleData.f;
+            magnitude = magData.f;
+            return true;
+        }
     }
 
-    // Check header
-    if (buffer[0] != ACCEL_HEADER) {
-        // Not the tilt packet
-        return false;
-    }
-
-    // Next 8 bytes = 2 floats
-    union FloatBytes {
-        float f;
-        uint8_t b[4];
-    } angleData, magData;
-
-    // angle
-    for (int i = 0; i < 4; i++) {
-        angleData.b[i] = buffer[1 + i];
-    }
-    // magnitude
-    for (int i = 0; i < 4; i++) {
-        magData.b[i] = buffer[5 + i];
-    }
-
-    angleDeg   = angleData.f; // degrees [0..360]
-    magnitude  = magData.f;   // [0..1]
-
-    return true;
+    return false; // No valid packet found
 }
 
 // -----------------------------------------------------------------------------
@@ -219,7 +212,7 @@ int main() {
     }
 
     // COM port for gyro
-    const char* portNameGyro = "COM4";  // Adjust as needed
+    const char* portNameGyro = "COM7";  // Adjust as needed
     HANDLE hSerialGyro = openSerialPort(portNameGyro, CBR_115200);
     if (hSerialGyro == INVALID_HANDLE_VALUE) {
         return 1;
@@ -245,14 +238,19 @@ int main() {
     while (true) {
         // a) Attempt to read accelerometer data (non-blocking)
         if (readTiltData(hSerialGyro, tiltAngleDeg, tiltMagnitude)) {
+            // std::cout << "\rTiltAngle=" << tiltAngleDeg 
+            // << " deg  TiltMag=" << tiltMagnitude 
+            // << "     " << std::flush;
             // If we got new data, convert angle to radians, magnitude in [0..1]
             double angleRad = tiltAngleDeg * M_PI / 180.0;
             double dynGmag  = tiltMagnitude * G_MAG; 
-            sim.update(dynGmag, angleRad);
-        } else {
-            // If no new data, we can keep last tilt or fallback to default
-            sim.update(G_MAG, G_ANG);
+            sim.update(G_MAG, angleRad);
         }
+        
+        //  else {
+        //     // If no new data, we can keep last tilt or fallback to default
+        //     sim.update(G_MAG, G_ANG);
+        // }
 
         // b) Get updated particle positions
         std::vector<double> positions = sim.get_visual_positions();

@@ -24,7 +24,7 @@ float maxTiltMagnitude = 9.8f; // ~1g
 void calculateTilt(float x, float y, float z) {
   // angle
   tiltAngle = atan2(y, x) * 180.0f / M_PI;
-  if (tiltAngle < 0) {
+  while (tiltAngle < 0) {
     tiltAngle += 360.0f;
   }
   // magnitude
@@ -76,19 +76,11 @@ void setup() {
 
   if (!mpu.begin()) {
     // If sensor not found, hang
-    while (true) { delay(1000); }
+    while (true) { delay(100); }
   }
-  Serial.println("MPU has began");
-  for (int half = 0; half < HALVES; half++) {
-    for (int y = 0; y < ROWS; y++) {
-      for (int x = 0; x < COLS; x++) {
-        frame[half][y][x].x = x;
-        frame[half][y][x].y = y;
-        frame[half][y][x].a = 0;
-      }
-    }
-  }
-  mpu.setAccelerometerRange(MPU6050_RANGE_2_G);
+  
+  mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
+  mpu.setGyroRange(MPU6050_RANGE_500_DEG);
   mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
 }
 
@@ -97,9 +89,15 @@ void setup() {
 // -----------------------------------------------------------------------------
 void loop() {
   sensors_event_t accel, gyro, temp;
-  mpu.getEvent(&accel, &gyro, &temp);
-
-  calculateTilt(accel.acceleration.x, accel.acceleration.y, accel.acceleration.z);
-  sendTiltData(tiltAngle, tiltMagnitude);
+  if (mpu.getEvent(&accel, &gyro, &temp)) {
+//  Serial.print("Gyro X: "); Serial.print(accel.acceleration.x);
+//  Serial.print(" Y: "); Serial.print(accel.acceleration.y);
+//  Serial.print(" Z: "); Serial.println(accel.acceleration.z);
+//  Serial.print(" tilt: "); Serial.println(tiltAngle);
+//  Serial.print(" mag: "); Serial.println(tiltMagnitude);
+//  delay(1000);
+    calculateTilt(accel.acceleration.x, accel.acceleration.y, accel.acceleration.z);
+    sendTiltData(tiltAngle, tiltMagnitude);
+    };
 
 }
