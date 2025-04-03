@@ -12,7 +12,7 @@
 
 static const int LED_ROWS = 9;
 static const int LED_COLS = 16;
-static const int VAR_INTENSITY = 3; 
+static const int VAR_INTENSITY = 10; 
 static const int HALF_COLS = 8;
 
 static const double CELL_SIZE = 0.1;
@@ -211,10 +211,10 @@ int main() {
         return 1;
     }
 
-    // COM port for gyro
-    const char* portNameGyro = "COM7";  // Adjust as needed
-    HANDLE hSerialGyro = openSerialPort(portNameGyro, CBR_115200);
-    if (hSerialGyro == INVALID_HANDLE_VALUE) {
+    // COM port for accl
+    const char* portNameAcc = "COM7";  // Adjust as needed
+    HANDLE hSerialAcc = openSerialPort(portNameAcc, CBR_115200);
+    if (hSerialAcc == INVALID_HANDLE_VALUE) {
         return 1;
     }
 
@@ -237,12 +237,12 @@ int main() {
 
     while (true) {
         // a) Attempt to read accelerometer data (non-blocking)
-        if (readTiltData(hSerialGyro, tiltAngleDeg, tiltMagnitude)) {
+        if (readTiltData(hSerialAcc, tiltAngleDeg, tiltMagnitude)) {
             // std::cout << "\rTiltAngle=" << tiltAngleDeg 
             // << " deg  TiltMag=" << tiltMagnitude 
             // << "     " << std::flush;
             // If we got new data, convert angle to radians, magnitude in [0..1]
-            double angleRad = tiltAngleDeg * M_PI / 180.0;
+            double angleRad = ((tiltAngleDeg) * -1 - 90)* M_PI / 180.0;
             double dynGmag  = tiltMagnitude * G_MAG; 
             sim.update(G_MAG, angleRad);
         }
@@ -275,6 +275,6 @@ int main() {
     }
 
     CloseHandle(hSerialGPU);
-    CloseHandle(hSerialGyro);
+    CloseHandle(hSerialAcc);
     return 0;
 }
