@@ -1,4 +1,4 @@
-# 🌊 **Project Luminous FLow**
+# 🌊 **Project Luminous Flow**
 ***Real-time fluid simulation on a LED matrix display*** responding to ***live accelerometer data***, rendered at 60+ FPS by a ***custom GPU built from scratch*** with Arduino and logic IC chips — continuum mechanics in a purely digital circuit!
 
 <p float="left">
@@ -19,6 +19,12 @@ The physics engine of our fluid simulation implements [Smoothed-particle hydrody
   <img src="Assets/engine.gif" height="240" />
   <img src="Assets/hashgrid.gif" height="240" />
 </p>
+
+## Graphics Processing Unit
+
+## I/O Hardware, Firmware, and Drivers
+
+
 
 ___
 
