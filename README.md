@@ -16,8 +16,8 @@ The physics engine of our fluid simulation implements [Smoothed-particle hydrody
 
 
 <p float="left">
-  <img src="Assets/engine.gif" height="250" />
-  <img src="Assets/hashgrid.gif" height="250" />
+  <img src="Assets/engine.gif" height="240" />
+  <img src="Assets/hashgrid.gif" height="240" />
 </p>
 
 ___
