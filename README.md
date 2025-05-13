@@ -20,6 +20,20 @@ The physics engine of our fluid simulation implements [Smoothed-particle hydrody
   <img src="Assets/hashgrid.gif" height="240" />
 </p>
 
+
+___
+
+<a id="1">[[1]](https://academic.oup.com/mnras/article/181/3/375/988212)</a> 
+Gingold, R. A., & Monaghan, J. J. (1977). *Smoothed particle hydrodynamics: theory and application to non-spherical stars.* Monthly notices of the royal astronomical society, 181(3), 375-389.
+
+Created by 
+[@a663E-36z1120](https://www.github.com/a663E-36z1120)
+&
+[@AlexZengXi](https://www.github.com/AlexZengXi); shoutout to [Prof. Ziqing Hong](https://zqhong.physics.utoronto.ca/) from the Department of Physics at University of Toronto for teaching the amazing [PHY405H1: Electronics Lab](https://artsci.calendar.utoronto.ca/course/phy405h1) course and supporting this project!
+
+___
+
+
 # **Detailed Technical Documentations**
 
 ## System Architecture
@@ -45,13 +59,3 @@ As illustrated in Figure~\ref{p2}, the system architecture is divided into three
 ## Power Supply
 
 
-
-___
-
-<a id="1">[[1]](https://academic.oup.com/mnras/article/181/3/375/988212)</a> 
-Gingold, R. A., & Monaghan, J. J. (1977). *Smoothed particle hydrodynamics: theory and application to non-spherical stars.* Monthly notices of the royal astronomical society, 181(3), 375-389.
-
-Created by 
-[@a663E-36z1120](https://www.github.com/a663E-36z1120)
-&
-[@AlexZengXi](https://www.github.com/AlexZengXi); shoutout to [Prof. Ziqing Hong](https://zqhong.physics.utoronto.ca/) from the Department of Physics at University of Toronto for teaching the amazing [PHY405H1: Electronics Lab](https://artsci.calendar.utoronto.ca/course/phy405h1) course and supporting this project!
