@@ -1,5 +1,5 @@
 # 🌊 **Project Luminous Flow**
-***Real-time fluid simulation on a LED matrix display*** responding to ***live accelerometer data***, rendered at 60+ FPS by a ***simple GPU built from scratch*** with Arduino and logic IC chips — continuum mechanics in a purely digital circuit!
+***Real-time fluid simulation on an LED matrix display*** responding to ***live accelerometer data***, rendered at 60+ FPS by a ***simple GPU built from scratch*** with Arduino and logic IC chips — continuum mechanics in a purely digital circuit!
 
 <p float="left">
   <img src="Assets/Demo.gif" height="250" />
@@ -7,7 +7,7 @@
 </p>
 
 ## Physics Engine
-The physics engine of our fluid simulation implements [Smoothed-particle hydrodynamics (SPH)](https://en.wikipedia.org/wiki/Smoothed-particle_hydrodynamics) proposed by Gingold and Monaghan in 1977 [[1]](#1). This can be found in [SPHEngine.cpp](SPHEngine.cpp), which in every cycle takes as input a 2D instaneously global acceleration in polar coordinates to update the positions of particles in the simulation.
+The physics engine of our fluid simulation implements [Smoothed-particle hydrodynamics (SPH)](https://en.wikipedia.org/wiki/Smoothed-particle_hydrodynamics) proposed by Gingold and Monaghan in 1977 [[1]](#1). This can be found in [SPHEngine.cpp](SPHEngine.cpp), which in every cycle takes as input a 2D instantaneous global acceleration in polar coordinates to update the positions of particles in the simulation.
 
 💡 If you want to use our physics engine for your own project, we've included an isolated version of it in [Prototyping/SPHEnginePybind.cpp](Prototyping/SPHEnginePybind.cpp) that you can interact with through a Jupyter notebook such as [Prototyping/physics_testbench.ipynb](Prototyping/physics_testbench.ipynb), thanks to the [pybind11](https://github.com/pybind/pybind11) project. A Python implementation that we used in the early stages of this project is also available in [Prototyping/physics_testbench_py.ipynb](Prototyping/physics_testbench_py.ipynb).
 
@@ -20,9 +20,29 @@ The physics engine of our fluid simulation implements [Smoothed-particle hydrody
   <img src="Assets/hashgrid.gif" height="240" />
 </p>
 
+# **Detailed Technical Documentations**
+
+## System Architecture
+We are designing an interactive LED matrix that simulates fluid motion in response to the system's tilt. Figure \ref{p1} shows the functional block diagram of the system. 
+
+As illustrated in Figure~\ref{p2}, the system architecture is divided into three primary sections. The far-right segment comprises four full-sized breadboards, collectively housing our custom-designed GPU. This region includes the main Arduino UNO, responsible for generating all driving signals, and the array of logic IC chips that help distribute the signals.
+
+<p float="left">
+  <img src="Assets/Project Functional Block Diagram.png" height="240" />
+  <img src="Assets/Project Build of Materials.png" height="240" />
+</p>
+
+## Fluid Physics Engine
+
+## Accelerometer
+
+## Communication Protocol 
+
 ## Graphics Processing Unit
 
-## I/O Hardware, Firmware, and Drivers
+## LED Matrix and nMOSFET Array
+
+## Power Supply
 
 
 
