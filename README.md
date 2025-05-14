@@ -34,28 +34,55 @@ Created by
 ___
 
 
-# **Detailed Technical Documentations**
+# **Detailed Technical Documentations for the Nerds**
+<img src="Assets/Circuit.jpg" height="250" />
+*Figure 1: Project Luminous Flow in Its Entirety *
 
 ## System Architecture
-We are designing an interactive LED matrix that simulates fluid motion in response to the system's tilt. Figure \ref{p1} shows the functional block diagram of the system. 
+We are designing an interactive LED matrix that simulates fluid motion in response to the system's tilt. Figure 2 shows the functional block diagram of the system. 
 
-As illustrated in Figure~\ref{p2}, the system architecture is divided into three primary sections. The far-right segment comprises four full-sized breadboards, collectively housing our custom-designed GPU. This region includes the main Arduino UNO, responsible for generating all driving signals, and the array of logic IC chips that help distribute the signals.
+<img src="Assets/Project Functional Block Diagram.png" height="250" />
+*Figure 2: Functional Block Diagram*
 
-<p float="left">
-  <img src="Assets/Project Functional Block Diagram.png" height="240" />
-  <img src="Assets/Project Build of Materials.png" height="240" />
-</p>
+As illustrated in Figure 1, the system architecture is divided into three primary sections. The far-right segment comprises four full-sized breadboards, collectively housing our custom-designed GPU. This region includes the main Arduino UNO, responsible for generating all driving signals, and the array of logic IC chips that help distribute the signals.
+
+To the left, a pair of breadboards make up the LED display section. This section houses the 16×9 LED matrix, the accelerometer, all the nMOSFETs, and the current-limiting resistors.\\
+
+Finally, the single breadboard in between acts as an interface board. It organizes the signal connections from the logic gate array to the LED display, simplifying testing and debugging. This board also holds the secondary Arduino, which relays accelerometer data to the physics engine for real-time simulation. 
+
+The Build of Materials can be found below in Table 1.
+
+<img src="Assets/Project Build of Materials.png" height="250" />
+*Table 1: Build of Materials*
+
 
 ## Fluid Physics Engine
+<img src="Assets/Fluid Physics Engine Pseudocode.png" height="250" />
+*Algorithm 1: Core Abstract Operations of the SPH Physics Engine*
 
 ## Accelerometer
 
 ## Communication Protocol 
 
 ## Graphics Processing Unit
+<img src="Assets/Arduino Bit-Bang Pin Mapping for Addressing the Multiplexed LED Matrix.png" height="250" />
+*Table 2: Arduino Bit-Bang Pin Mapping for Addressing the Multiplexed LED Matrix. (See Table 3: Pixel Addressing) Pin 11 is used for the PWM Signal Broadcast. *
+
+
+<img src="Assets/GPU Top Down Photo.jpg" height="250" />
+*Figure 3: Photo of the GPU we constructed. On the rightmost 3 breadboard columns: **top left:** 4x SN7442N decimal decoder array. **top center & top right:** 6x SN7404 hex inverter (NOT gate) array. **bottom left, center, & right:** 9x SN7408 AND gate array. Wire colors: **Orange & Blue:** internal digital signal wires, alternates every 4 bit and after passing through NOT gates. **Yellow:** PWM signal broadcast wires. **Green:** Output signal wires. **Red:** 5V Vcc. **Black:** Ground.*
 
 ## LED Matrix and nMOSFET Array
+<img src="Hardware/LED Matrix 2973 Adafruit Schematics & Layout & Simulatoin/led_matrix_matrixsch.png" height="250" />
+*Figure 4: 2973 Adafruit 16x9 Blue LED Matrix Schematic*
+
+<img src="Assets/nMOSFETs Controls for Each LED Matrix Pin.png" height="250" />
+*Figure 5: Schematics of the Pull-Up and Pull-Down Setup for Control Pin 0 from the LED Matrix as Example*
+
+<img src="Hardware/LED Matrix 2973 Adafruit Schematics & Layout & Simulatoin/LUT Pull-Up and Pull-Down Pin Configuration for Each LED Activation.png" height="250" />
+*Table 3: Configuration values for LED matrix control. For each LED position, the table shows which pins should be set to 5V and which to GND*
 
 ## Power Supply
-
+<img src="Assets/Multiplexed LED Matrix and nMOSFETs Drivers Section.png" height="250" />
+*Figure 6: Photo of the LED Display and Driver Section, consists of 36x 2N7000 nMOSFETs, 16x 100R Resistors and the LED display. (the accelerometer is missing in this photo). Wire colors: **Green & Blue on the right:** nMOSFETs' gate signal wires connecting to the interface board. **White:** Wires Connecting to the LED display. **Red:** 5V Power Supply. **Black:** Ground.**
 
