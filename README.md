@@ -117,5 +117,6 @@ Both 5V channels from the external power supply and the two Arduino UNOs share a
 
 <img src="Assets/Multiplexed LED Matrix and nMOSFETs Drivers Section.png" height="250" />
 *Figure 6: Photo of the LED Display and Driver Section, consists of 36x 2N7000 nMOSFETs, 16x 100R Resistors and the LED display. (the accelerometer is missing in this photo). Wire colors: **Green & Blue on the right:** nMOSFETs' gate signal wires connecting to the interface board. **White:** Wires Connecting to the LED display. **Red:** 5V Power Supply. **Black:** Ground.**
-hello 
+
+
 
