@@ -57,16 +57,38 @@ The Build of Materials can be found below in Table 1.
 
 
 ## Fluid Physics Engine
+The physics engine of our fluid simulation implements Smoothed-particle hydrodynamics (SPH) as proposed by Gingold and Monaghan in 1977. Pseudo-code outlined by the Algorithm describes how our implementation of the SPH physics engine operates.
+
 <img src="Assets/Fluid Physics Engine Pseudocode.png" height="250" />
 *Algorithm 1: Core Abstract Operations of the SPH Physics Engine*
 
+Every cycle of our physics engine takes as input a 2D instantaneous global acceleration in polar coordinates and outputs to update the positions of particles in the simulation.
+
+
 ## Accelerometer
+We are using an MPU6050 GY-521 Accelerometer Module. It communicates to our secondary Arduino UNO through I2C and then feeds serial data to the physics engine. Given that our simulation is 2D while our accelerometer supplies acceleration vectors in 3D, we project $\vec{a} = (x, y, z)$ onto the $xy$-plane and compute:
+
+<img src="Assets/Accelerometer math.png" height="250" />
+*Algorithm 2: Core Abstract Operations of the SPH Physics Engine*
+
+This projected and normalized polar form accelerometer data $(\theta, m)$ is what we input into our physics engine.
 
 ## Communication Protocol 
+The system establishes two serial communication channels between the PC that runs the SPH physics simulation and two Arduinos. The first Arduino is connected to an MPU6050 accelerometer via I²C and continuously transmits orientation data to the PC over USB serial at 115200 baud. Each packet is 9 bytes long, consisting of a 1-byte header (0xFE), followed by two 4-byte `float` values: the tilt angle and normalized magnitude. These values are packed in little-endian order and sent as raw binary data.
+
+On the PC side, this data is received asynchronously and used to update a real-time 2D smoothed particle hydrodynamics (SPH) simulation. The new gravity direction is derived from the received tilt values and applied to the particle system. The resulting particle positions are mapped to a $9 \times 16$ LED grid using a uniform hash grid, where local particle density is converted into brightness values in the range $[0, 255]$.
+
+A second serial connection is established between the PC and a second Arduino responsible for controlling the LED matrix (the "GPU Arduino") also at 115200 baud. A hash grid maps continuous particle positions from the physics simulation into discrete LED grid cells by counting particle density per cell, which is then linearly scaled to individual pixel brightness in a frame. The PC sends full display frames as 145-byte binary packets, consisting of a 1-byte header (0xFF), followed by 144 brightness bytes (row-major order). These values are packed in little-endian order and sent as raw binary data. The GPU Arduino receives these frames and renders them to the physical display using a Charlieplexing scheme with bit-banged 4-bit output codes. Brightness is modulated using PWM control, allowing smooth intensity transitions.
+
 
 ## Graphics Processing Unit
+We constructed a simple GPU from an Arduino Uno and logic IC chips listed on Table 1 to be able to render our physics engine at a frame rate that seems realistic to the naked eye on our LED matrix display. As shown on Table 3, the LED matrix display requires 36 unique digital pins to address all pixels on our display while our physics simulation will appear more compelling if we are able to control the brightness of every pixel independently. However, the Arduino Uno only has 20 GPIO pins, out of which only 6 can support PWM. Our GPU firmware overcomes this limitation by employing a bit-banging technique that encodes the signal for each half of the LED display into 4-bit binary values. Specifically, the left and right halves of the display are each driven by two sets of 4 GPIO pins—one set for the positive rail and one for the negative rail—totaling 16 GPIO pins, as shown on Table 2. For every pixel, the firmware determines a pair of 4-bit little-endian codes that specify the required output on the positive and negative rails, respectively, according to a pre-defined Charlieplexing lookup table. PWM signal to control the brightness of every pixel originates from a single pin (Pin 11).
+
+
 <img src="Assets/Arduino Bit-Bang Pin Mapping for Addressing the Multiplexed LED Matrix.png" height="100" />
 *Table 2: Arduino Bit-Bang Pin Mapping for Addressing the Multiplexed LED Matrix. (See Table 3: Pixel Addressing) Pin 11 is used for the PWM Signal Broadcast. *
+
+At the hardware level, each of our 4-bit encoded binary control signals from the Arduino Uno is first decoded with SN7442N decimal decoders. The SN7442N decodes our 4-bit binary control signal to one of its 10 output pins outputting low voltage while all other 9 output pins output high voltage. We want the opposite—where only 1 pin outputs high while the rest output low—so we pass the decoded signal through SN7404 hex inverters, which are effectively an array of NOT gates that invert the decoded signals to what we want. Finally, we pass this inverted signal and a broadcasted PWM signal from Pin 11 through SN7408 binary AND gates to give our control signal the desired duty cycle to control the brightness of the pixel it drives. The output from the AND gate arrays are the final digital output signals to the LED matrix display. The constructed circuit of our GPU can be seen in Figure 3.
 
 
 <img src="Assets/GPU Top Down Photo.jpg" height="250" />
@@ -75,7 +97,7 @@ The Build of Materials can be found below in Table 1.
 ## LED Matrix and nMOSFET Array
 We are using the Adafruit 2973 16x9 blue LED matrix to display the behavior of water under varying tilt angles. This matrix comprises 144 individual LEDs, and driving each LED with a separate GPIO pin would be impractical. Instead, we employ a common technique called multiplexing. Specifically, this board utilizes a row-column multiplexing method. 
 
-The 16x9 LED matrix is internally structured as two independent 8x9 LED matrices, Matrix A and Matrix B. Each of these 8x9 matrices is controlled by nine dedicated pins, as illustrated in the schematic (Figure \ref{p3} or the project's GitHub page for a higher-resolution image). Each of these nine pins is connected to a pair of 2N70000 nMOSFETs. One MOSFET, when the gate receives an activation signal, connects the pin to ground. The other MOSFET, when activated, connects the pin through a 100R current-limiting resistor to the 5V power supply. It is also worth noting that the connections for each row and column are unique and should be carefully examined. 
+The 16x9 LED matrix is internally structured as two independent 8x9 LED matrices, Matrix A and Matrix B. Each of these 8x9 matrices is controlled by nine dedicated pins, as illustrated in the schematic (Figure 4 or the project's GitHub page for a higher-resolution image). Each of these nine pins is connected to a pair of 2N70000 nMOSFETs. One MOSFET, when the gate receives an activation signal, connects the pin to ground. The other MOSFET, when activated, connects the pin through a 100R current-limiting resistor to the 5V power supply. It is also worth noting that the connections for each row and column are unique and should be carefully examined. 
 
 LEDs are unidirectional devices, meaning they only emit light when current flows through them in the forward direction. Additionally, in a multiplexed matrix, even if an LED has the correct forward voltage across it, if a lower-resistance path from another LED exists for the current, the current won't go through other LEDs. This current flow characteristic dictates how we can selectively activate individual LEDs within the matrix. 
 
@@ -100,7 +122,7 @@ In our row-column multiplexing method, to keep the firmware simple, we only turn
 
 Since only one LED is active at any given moment, the 100R current-limiting resistor is selected based on the current requirements of a single blue LED operating at 5V. 
 
-To simplify debugging and quickly determine which pins need to be pulled high or low, we created a lookup table, as shown in Table \ref{tab:LUT}. This table is then used in the firmware to control the corresponding MOSFETs for each LED.
+To simplify debugging and quickly determine which pins need to be pulled high or low, we created a lookup table, as shown in Table 3. This table is then used in the firmware to control the corresponding MOSFETs for each LED.
 
 
 <img src="Hardware/LED Matrix 2973 Adafruit Schematics & Layout & Simulatoin/LUT Pull-Up and Pull-Down Pin Configuration for Each LED Activation.png" height="500" />
